@@ -38,21 +38,15 @@ use core_privacy\local\request\userlist;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
-    \core_privacy\local\metadata\provider,
-
-    // The Enrolled Courses Block plugin contains user's enrolled courses.
-    \core_privacy\local\request\plugin\provider,
-
     \core_privacy\local\metadata\null_provider,
-
-    \core_privacy\local\request\core_userlist_provider {
-
-     /**
-      * Returns meta data about this system.
-      *
-      * @param collection $collection The initialised collection to add items to.
-      * @return collection A listing of user data stored through this system.
-      */
+    \core_privacy\local\metadata\provider,
+    \core_privacy\local\request\core_userlist_provider,
+    \core_privacy\local\request\plugin\provider {
+    /**
+     * Get the language string identifier explaining why this plugin stores no personal data.
+     *
+     * @return string
+     */
     public static function get_reason(): string {
         return 'privacy:metadata';
     }
@@ -120,7 +114,7 @@ class provider implements
      */
     public static function delete_data_for_users(approved_userlist $userlist) {
         global $DB;
-        list($userinsql, $userinparams) = $DB->get_in_or_equal($userlist->get_userids(), SQL_PARAMS_NAMED);
+        [$userinsql, $userinparams] = $DB->get_in_or_equal($userlist->get_userids(), SQL_PARAMS_NAMED);
         $params = $userinparams;
         $sql = "userid {$userinsql}";
         $DB->delete_records_select('tool_inactive_user_cleanup', $sql, $params);
@@ -183,9 +177,9 @@ class provider implements
         ];
 
         // Query to get users who have valid context.
-        $sql = "SELECT iu.userid 
+        $sql = "SELECT iu.userid
                   FROM {tool_inactive_user_cleanup} iu
-                  JOIN {context} c 
+                  JOIN {context} c
                   WHERE iu.userid = c.instanceid
                     AND c.instanceid = :instanceid";
 

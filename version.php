@@ -30,5 +30,3 @@ $plugin->requires  = 2024042210;        // Requires Moodle version 4.4.
 $plugin->component = 'tool_inactive_user_cleanup'; // Full name of the plugin (used for diagnostics).
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->release = '2.7.6 (Build: 2025051900)';
-
-

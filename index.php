@@ -24,8 +24,8 @@
  */
 
 require_once('../../../config.php');
-require_once($CFG->libdir.'/adminlib.php');
-require_once($CFG->dirroot.'/'.$CFG->admin.'/tool/inactive_user_cleanup/settings_form.php');
+require_once($CFG->libdir . '/adminlib.php');
+require_once($CFG->dirroot . '/' . $CFG->admin . '/tool/inactive_user_cleanup/settings_form.php');
 
 require_login();
 

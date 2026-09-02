@@ -25,7 +25,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->libdir.'/formslib.php');
+require_once($CFG->libdir . '/formslib.php');
 require_once($CFG->dirroot . '/user/editlib.php');
 
 /**
@@ -35,7 +35,6 @@ require_once($CFG->dirroot . '/user/editlib.php');
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class tool_inactive_user_cleanup_config_form extends moodleform {
-
     /**
      * Definition.
      */
@@ -53,7 +52,13 @@ class tool_inactive_user_cleanup_config_form extends moodleform {
         $mform->addElement('text', 'config_subjectemail', get_string('emailsubject', 'tool_inactive_user_cleanup'));
         $editoroptions = ['trusttext' => true, 'subdirs' => true, 'maxfiles' => 1,
         'maxbytes' => 1024];
-        $mform->addElement('editor', 'config_bodyemail', get_string('emailbody', 'tool_inactive_user_cleanup'), null, $editoroptions);
+        $mform->addElement(
+            'editor',
+            'config_bodyemail',
+            get_string('emailbody', 'tool_inactive_user_cleanup'),
+            null,
+            $editoroptions
+        );
         $mform->setType('config_subjectemail', PARAM_TEXT);
         $mform->setDefault('config_subjectemail', 'subject');
         $mform->setType('config_bodyemail', PARAM_RAW);

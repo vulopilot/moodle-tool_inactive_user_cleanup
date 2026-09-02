@@ -32,7 +32,6 @@ namespace tool_inactive_user_cleanup\task;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class tool_inactive_user_cleanup_task extends \core\task\scheduled_task {
-
     /**
      * Get a descriptive name for this task (shown to admins).
      *
@@ -64,9 +63,10 @@ class tool_inactive_user_cleanup_task extends \core\task\scheduled_task {
             $ischeck = $DB->get_record('tool_inactive_user_cleanup', ['userid' => $usersdetails->id]);
             $record = new \stdClass();
             $record->userid = $usersdetails->id;
-            if ($minus > $inactivity && !$ischeck && $usersdetails->lastaccess != 0 && email_to_user($usersdetails, $mainadminuser, $subject, $messagetext)) {
+            $shouldnotify = $minus > $inactivity && !$ischeck && $usersdetails->lastaccess != 0;
+            if ($shouldnotify && email_to_user($usersdetails, $mainadminuser, $subject, $messagetext)) {
                 mtrace(get_string('userid', 'tool_inactive_user_cleanup'));
-                mtrace($usersdetails->id. '---' .$usersdetails->email);
+                mtrace($usersdetails->id . '---' . $usersdetails->email);
                 mtrace(get_string('userinactivtime', 'tool_inactive_user_cleanup') . $minus);
                 mtrace('');
                 $record->emailsent = 1;
@@ -75,7 +75,7 @@ class tool_inactive_user_cleanup_task extends \core\task\scheduled_task {
             }
             if ($beforedelete != 0 &&  $usersdetails->lastaccess != 0) {
                 $deleteuserafternotify = $DB->get_record('tool_inactive_user_cleanup', ['userid' => $usersdetails->id]);
-                if($deleteuserafternotify) {
+                if ($deleteuserafternotify) {
                     $beforedelete = get_config('tool_inactive_user_cleanup', 'daysbeforedeletion');
                     $mailssent = $deleteuserafternotify->date;
                     $diff = round((time() - $mailssent) / 60 / 60 / 24);
@@ -88,5 +88,5 @@ class tool_inactive_user_cleanup_task extends \core\task\scheduled_task {
             }
         }
         mtrace(get_string('taskend', 'tool_inactive_user_cleanup'));
-    } // End of function execute()
-}// End of class
+    }
+}
