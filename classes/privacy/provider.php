@@ -148,10 +148,15 @@ class provider implements
      */
     public static function export_user_data(approved_contextlist $contextlist) {
         global $DB;
-        $subcontext = $contextlist->get_contexts();
-        $data = $DB->get_records('tool_inactive_user_cleanup');
-        foreach ($subcontext as $context) {
-            writer::with_context($context)->export_data($subcontext, $data);
+        $userid = $contextlist->get_user()->id;
+        $records = $DB->get_records('tool_inactive_user_cleanup', ['userid' => $userid]);
+        foreach ($contextlist->get_contexts() as $context) {
+            foreach ($records as $record) {
+                writer::with_context($context)->export_data(
+                    [get_string('pluginname', 'tool_inactive_user_cleanup')],
+                    $record
+                );
+            }
         }
     }
 

@@ -31,27 +31,39 @@ use tool_inactive_user_cleanup\form\config_form;
 require_login();
 
 admin_externalpage_setup('toolinactive_user_cleanup');
-echo $OUTPUT->header();
-$settingsform = new config_form();
-$fromdata = $settingsform->get_data();
-$configdata = get_config('tool_inactive_user_cleanup');
 
-if (!empty($configdata->daysbeforedeletion)) {
+$settingsform = new config_form();
+
+if ($fromform = $settingsform->get_data()) {
+    set_config('daysbeforedeletion', $fromform->config_daysbeforedeletion, 'tool_inactive_user_cleanup');
+    set_config('daysofinactivity', $fromform->config_daysofinactivity, 'tool_inactive_user_cleanup');
+    set_config('emailsubject', $fromform->config_subjectemail, 'tool_inactive_user_cleanup');
+    set_config('emailbody', $fromform->config_bodyemail['text'], 'tool_inactive_user_cleanup');
+    set_config('includeneverloggedin', $fromform->config_includeneverloggedin, 'tool_inactive_user_cleanup');
+    set_config('restrictcourseid', $fromform->config_restrictcourseid, 'tool_inactive_user_cleanup');
+    set_config('excludecohortid', $fromform->config_excludecohortid, 'tool_inactive_user_cleanup');
+
+    redirect(
+        new moodle_url('/admin/tool/inactive_user_cleanup/index.php'),
+        get_string('changessaved'),
+        null,
+        \core\output\notification::NOTIFY_SUCCESS
+    );
+}
+
+$configdata = get_config('tool_inactive_user_cleanup');
+if (!empty($configdata)) {
     $data = new stdClass();
-    $data->config_daysbeforedeletion = $configdata->daysbeforedeletion;
-    $data->config_daysofinactivity = $configdata->daysofinactivity;
-    $data->config_subjectemail = $configdata->emailsubject;
-    $data->config_bodyemail['text'] = $configdata->emailbody;
+    $data->config_daysbeforedeletion = $configdata->daysbeforedeletion ?? 10;
+    $data->config_daysofinactivity = $configdata->daysofinactivity ?? 365;
+    $data->config_subjectemail = $configdata->emailsubject ?? '';
+    $data->config_bodyemail['text'] = $configdata->emailbody ?? '';
+    $data->config_includeneverloggedin = $configdata->includeneverloggedin ?? 0;
+    $data->config_restrictcourseid = $configdata->restrictcourseid ?? 0;
+    $data->config_excludecohortid = $configdata->excludecohortid ?? 0;
     $settingsform->set_data($data);
 }
 
+echo $OUTPUT->header();
 $settingsform->display();
-
-if ($settingsform->is_submitted()) {
-    set_config('daysbeforedeletion', $fromdata->config_daysbeforedeletion, 'tool_inactive_user_cleanup');
-    set_config('daysofinactivity', $fromdata->config_daysofinactivity, 'tool_inactive_user_cleanup');
-    set_config('emailsubject', $fromdata->config_subjectemail, 'tool_inactive_user_cleanup');
-    set_config('emailbody', $fromdata->config_bodyemail['text'], 'tool_inactive_user_cleanup');
-}
-
 echo $OUTPUT->footer();

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * tool_inactive_user_cleanup version specification
+ * Defines message providers (types of messages being sent).
  *
  * @package    tool_inactive_user_cleanup
  * @copyright  DualCube (https://dualcube.com)
@@ -25,8 +25,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026090200;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2024042210;        // Requires Moodle version 4.4.
-$plugin->component = 'tool_inactive_user_cleanup'; // Full name of the plugin (used for diagnostics).
-$plugin->maturity  = MATURITY_STABLE;
-$plugin->release = '2.8.0 (Build: 2026090200)';
+$messageproviders = [
+    'inactivenotice' => [
+        'defaults' => [
+            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+        ],
+    ],
+];

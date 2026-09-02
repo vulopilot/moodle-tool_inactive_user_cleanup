@@ -27,7 +27,7 @@ defined('MOODLE_INTERNAL') || die;
 
 if ($hassiteconfig) {
     $ADMIN->add(
-        'reports',
+        'tools',
         new admin_externalpage(
             'toolinactive_user_cleanup',
             get_string('pluginname', 'tool_inactive_user_cleanup'),

@@ -65,6 +65,68 @@ class config_form extends \moodleform {
         $mform->setDefault('config_subjectemail', 'subject');
         $mform->setType('config_bodyemail', PARAM_RAW);
         $mform->setDefault('config_bodyemail', 'body');
+
+        $mform->addElement('header', 'config_headerscope', get_string('scopesetting', 'tool_inactive_user_cleanup'));
+        $mform->addElement(
+            'advcheckbox',
+            'config_includeneverloggedin',
+            get_string('includeneverloggedin', 'tool_inactive_user_cleanup')
+        );
+        $mform->setType('config_includeneverloggedin', PARAM_INT);
+        $mform->setDefault('config_includeneverloggedin', 0);
+        $mform->addElement(
+            'select',
+            'config_restrictcourseid',
+            get_string('restrictcourseid', 'tool_inactive_user_cleanup'),
+            $this->get_course_options()
+        );
+        $mform->setType('config_restrictcourseid', PARAM_INT);
+        $mform->setDefault('config_restrictcourseid', 0);
+        $mform->addElement(
+            'select',
+            'config_excludecohortid',
+            get_string('excludecohortid', 'tool_inactive_user_cleanup'),
+            $this->get_cohort_options()
+        );
+        $mform->setType('config_excludecohortid', PARAM_INT);
+        $mform->setDefault('config_excludecohortid', 0);
+
         $this->add_action_buttons();
+    }
+
+    /**
+     * Get the list of courses to offer in the "restrict to course" selector.
+     *
+     * @return array id => fullname, with 0 meaning site-wide
+     */
+    private function get_course_options(): array {
+        global $DB;
+        $options = [0 => get_string('allcourses', 'tool_inactive_user_cleanup')];
+        $courses = $DB->get_records_select(
+            'course',
+            'id <> :siteid',
+            ['siteid' => SITEID],
+            'fullname ASC',
+            'id, fullname'
+        );
+        foreach ($courses as $course) {
+            $options[$course->id] = format_string($course->fullname);
+        }
+        return $options;
+    }
+
+    /**
+     * Get the list of cohorts to offer in the "exclude cohort" selector.
+     *
+     * @return array id => name, with 0 meaning no cohort excluded
+     */
+    private function get_cohort_options(): array {
+        global $DB;
+        $options = [0 => get_string('nocohort', 'tool_inactive_user_cleanup')];
+        $cohorts = $DB->get_records('cohort', null, 'name ASC', 'id, name');
+        foreach ($cohorts as $cohort) {
+            $options[$cohort->id] = format_string($cohort->name);
+        }
+        return $options;
     }
 }
