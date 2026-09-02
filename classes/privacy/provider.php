@@ -102,9 +102,7 @@ class provider implements
             return;
         }
         $userid = $contextlist->get_user()->id;
-        foreach ($contextlist->get_contexts() as $context) {
-            $DB->delete_records('tool_inactive_user_cleanup', ['userid' => $userid]);
-        }
+        $DB->delete_records('tool_inactive_user_cleanup', ['userid' => $userid]);
     }
 
     /**

@@ -45,48 +45,87 @@ class tool_inactive_user_cleanup_task extends \core\task\scheduled_task {
      * Execute.
      */
     public function execute() {
-        global $DB, $CFG;
+        global $DB;
         mtrace(get_string('taskstart', 'tool_inactive_user_cleanup'));
-        $beforedelete = get_config('tool_inactive_user_cleanup', 'daysbeforedeletion');
+
         $inactivity = get_config('tool_inactive_user_cleanup', 'daysofinactivity');
         if ($inactivity == 0) {
             mtrace(get_string('invalaliddayofinactivity', 'tool_inactive_user_cleanup'));
             return;
         }
+
+        $beforedelete = get_config('tool_inactive_user_cleanup', 'daysbeforedeletion');
         $subject = get_config('tool_inactive_user_cleanup', 'emailsubject');
-        $body = get_config('tool_inactive_user_cleanup', 'emailbody');
+        $messagetext = html_to_text(get_config('tool_inactive_user_cleanup', 'emailbody'));
+        $adminuser = get_admin();
+
         $users = $DB->get_records('user', ['deleted' => '0']);
-        $messagetext = html_to_text($body);
-        $mainadminuser = get_admin();
-        foreach ($users as $usersdetails) {
-            $minus = round((time() - $usersdetails->lastaccess) / 60 / 60 / 24);
-            $ischeck = $DB->get_record('tool_inactive_user_cleanup', ['userid' => $usersdetails->id]);
-            $record = new \stdClass();
-            $record->userid = $usersdetails->id;
-            $shouldnotify = $minus > $inactivity && !$ischeck && $usersdetails->lastaccess != 0;
-            if ($shouldnotify && email_to_user($usersdetails, $mainadminuser, $subject, $messagetext)) {
-                mtrace(get_string('userid', 'tool_inactive_user_cleanup'));
-                mtrace($usersdetails->id . '---' . $usersdetails->email);
-                mtrace(get_string('userinactivtime', 'tool_inactive_user_cleanup') . $minus);
-                mtrace('');
-                $record->emailsent = 1;
-                $record->date = time();
-                $DB->insert_record('tool_inactive_user_cleanup', $record, false);
+        foreach ($users as $user) {
+            if ($user->lastaccess == 0) {
+                continue;
             }
-            if ($beforedelete != 0 &&  $usersdetails->lastaccess != 0) {
-                $deleteuserafternotify = $DB->get_record('tool_inactive_user_cleanup', ['userid' => $usersdetails->id]);
-                if ($deleteuserafternotify) {
-                    $beforedelete = get_config('tool_inactive_user_cleanup', 'daysbeforedeletion');
-                    $mailssent = $deleteuserafternotify->date;
-                    $diff = round((time() - $mailssent) / 60 / 60 / 24);
-                    if (!empty($deleteuserafternotify) && $diff > $beforedelete && !isguestuser($usersdetails->id)) {
-                        delete_user($usersdetails);
-                        mtrace(get_string('deleteduser', 'tool_inactive_user_cleanup') . $usersdetails->id);
-                        mtrace(get_string('detetsuccess', 'tool_inactive_user_cleanup'));
-                    }
-                }
+            $this->notify_inactive_user($user, $inactivity, $subject, $messagetext, $adminuser);
+            if ($beforedelete != 0) {
+                $this->delete_notified_user($user, $beforedelete);
             }
         }
+
         mtrace(get_string('taskend', 'tool_inactive_user_cleanup'));
+    }
+
+    /**
+     * Email an inactive user and record that they were notified, unless already notified.
+     *
+     * @param \stdClass $user
+     * @param int $inactivity days of inactivity before a notification is due
+     * @param string $subject
+     * @param string $messagetext
+     * @param \stdClass $adminuser
+     */
+    private function notify_inactive_user($user, $inactivity, $subject, $messagetext, $adminuser) {
+        global $DB;
+        $inactivedays = round((time() - $user->lastaccess) / 60 / 60 / 24);
+        if ($inactivedays <= $inactivity) {
+            return;
+        }
+        if ($DB->get_record('tool_inactive_user_cleanup', ['userid' => $user->id])) {
+            return;
+        }
+        if (!email_to_user($user, $adminuser, $subject, $messagetext)) {
+            return;
+        }
+
+        mtrace(get_string('userid', 'tool_inactive_user_cleanup'));
+        mtrace($user->id . '---' . $user->email);
+        mtrace(get_string('userinactivtime', 'tool_inactive_user_cleanup') . $inactivedays);
+        mtrace('');
+
+        $record = new \stdClass();
+        $record->userid = $user->id;
+        $record->emailsent = 1;
+        $record->date = time();
+        $DB->insert_record('tool_inactive_user_cleanup', $record, false);
+    }
+
+    /**
+     * Delete a previously notified user once the notice period has elapsed.
+     *
+     * @param \stdClass $user
+     * @param int $beforedelete days to wait after notification before deletion
+     */
+    private function delete_notified_user($user, $beforedelete) {
+        global $DB;
+        $notice = $DB->get_record('tool_inactive_user_cleanup', ['userid' => $user->id]);
+        if (!$notice) {
+            return;
+        }
+        $sincenotice = round((time() - $notice->date) / 60 / 60 / 24);
+        if ($sincenotice <= $beforedelete || isguestuser($user->id)) {
+            return;
+        }
+
+        delete_user($user);
+        mtrace(get_string('deleteduser', 'tool_inactive_user_cleanup') . $user->id);
+        mtrace(get_string('detetsuccess', 'tool_inactive_user_cleanup'));
     }
 }
