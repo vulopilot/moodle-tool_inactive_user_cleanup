@@ -23,10 +23,12 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace tool_inactive_user_cleanup\form;
+
 defined('MOODLE_INTERNAL') || die();
 
+global $CFG;
 require_once($CFG->libdir . '/formslib.php');
-require_once($CFG->dirroot . '/user/editlib.php');
 
 /**
  * settings form for tool_inactive_user_cleanup
@@ -34,7 +36,7 @@ require_once($CFG->dirroot . '/user/editlib.php');
  * @copyright DualCube (https://dualcube.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class tool_inactive_user_cleanup_config_form extends moodleform {
+class config_form extends \moodleform {
     /**
      * Definition.
      */

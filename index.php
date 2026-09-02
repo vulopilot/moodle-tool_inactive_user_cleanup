@@ -25,13 +25,14 @@
 
 require_once('../../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
-require_once($CFG->dirroot . '/' . $CFG->admin . '/tool/inactive_user_cleanup/settings_form.php');
+
+use tool_inactive_user_cleanup\form\config_form;
 
 require_login();
 
 admin_externalpage_setup('toolinactive_user_cleanup');
 echo $OUTPUT->header();
-$settingsform = new tool_inactive_user_cleanup_config_form();
+$settingsform = new config_form();
 $fromdata = $settingsform->get_data();
 $configdata = get_config('tool_inactive_user_cleanup');
 
