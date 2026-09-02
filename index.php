@@ -42,6 +42,7 @@ if ($fromform = $settingsform->get_data()) {
     set_config('includeneverloggedin', $fromform->config_includeneverloggedin, 'tool_inactive_user_cleanup');
     set_config('restrictcourseid', $fromform->config_restrictcourseid, 'tool_inactive_user_cleanup');
     set_config('excludecohortid', $fromform->config_excludecohortid, 'tool_inactive_user_cleanup');
+    set_config('excludedroles', $fromform->config_excludedroles, 'tool_inactive_user_cleanup');
 
     redirect(
         new moodle_url('/admin/tool/inactive_user_cleanup/index.php'),
@@ -61,6 +62,7 @@ if (!empty($configdata)) {
     $data->config_includeneverloggedin = $configdata->includeneverloggedin ?? 0;
     $data->config_restrictcourseid = $configdata->restrictcourseid ?? 0;
     $data->config_excludecohortid = $configdata->excludecohortid ?? 0;
+    $data->config_excludedroles = !empty($configdata->excludedroles) ? explode(',', $configdata->excludedroles) : [];
     $settingsform->set_data($data);
 }
 

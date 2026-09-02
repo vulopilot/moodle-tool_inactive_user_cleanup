@@ -60,20 +60,18 @@ class tool_inactive_user_cleanup_task extends \core\task\scheduled_task {
         $includeneverloggedin = !empty(get_config('tool_inactive_user_cleanup', 'includeneverloggedin'));
         $courseid = (int) get_config('tool_inactive_user_cleanup', 'restrictcourseid');
         $excludecohortid = (int) get_config('tool_inactive_user_cleanup', 'excludecohortid');
+        $excludedroles = $this->get_excluded_role_ids();
 
         $excludeduserids = $excludecohortid ? $this->get_cohort_member_ids($excludecohortid) : [];
 
         foreach ($this->get_candidate_users($courseid) as $user) {
-            if (isguestuser($user) || in_array($user->id, $excludeduserids)) {
+            if ($this->is_excluded_user($user, $excludeduserids, $excludedroles)) {
                 continue;
             }
 
-            $lastaccess = $this->get_user_last_access($user, $courseid);
-            if ($lastaccess == 0) {
-                if (!$includeneverloggedin) {
-                    continue;
-                }
-                $lastaccess = $user->timecreated;
+            $lastaccess = $this->resolve_last_access($user, $courseid, $includeneverloggedin);
+            if ($lastaccess === null) {
+                continue;
             }
 
             $this->notify_inactive_user($user, $lastaccess, $inactivity, $subject, $messagetext, $emailbody);
@@ -83,6 +81,37 @@ class tool_inactive_user_cleanup_task extends \core\task\scheduled_task {
         }
 
         mtrace(get_string('taskend', 'tool_inactive_user_cleanup'));
+    }
+
+    /**
+     * Check whether a user must be skipped entirely: guests, site admins, and configured cohort/role exclusions.
+     *
+     * @param \stdClass $user
+     * @param int[] $excludeduserids user ids belonging to the excluded cohort
+     * @param int[] $excludedroles role ids that exclude a user if held anywhere
+     * @return bool
+     */
+    private function is_excluded_user(\stdClass $user, array $excludeduserids, array $excludedroles): bool {
+        if (isguestuser($user) || is_siteadmin($user) || in_array($user->id, $excludeduserids)) {
+            return true;
+        }
+        return $excludedroles && $this->has_any_role($user->id, $excludedroles);
+    }
+
+    /**
+     * Resolve the timestamp to measure a user's inactivity from, or null if they should be skipped.
+     *
+     * @param \stdClass $user
+     * @param int $courseid 0 for site-wide last access
+     * @param bool $includeneverloggedin whether to fall back to account creation date
+     * @return int|null
+     */
+    private function resolve_last_access(\stdClass $user, int $courseid, bool $includeneverloggedin): ?int {
+        $lastaccess = $this->get_user_last_access($user, $courseid);
+        if ($lastaccess != 0) {
+            return $lastaccess;
+        }
+        return $includeneverloggedin ? (int) $user->timecreated : null;
     }
 
     /**
@@ -128,6 +157,34 @@ class tool_inactive_user_cleanup_task extends \core\task\scheduled_task {
     private function get_cohort_member_ids(int $cohortid): array {
         global $DB;
         return $DB->get_fieldset_select('cohort_members', 'userid', 'cohortid = :cohortid', ['cohortid' => $cohortid]);
+    }
+
+    /**
+     * Get the role ids configured to be excluded from cleanup.
+     *
+     * @return int[]
+     */
+    private function get_excluded_role_ids(): array {
+        $stored = get_config('tool_inactive_user_cleanup', 'excludedroles');
+        if (empty($stored)) {
+            return [];
+        }
+        return array_filter(array_map('intval', explode(',', $stored)));
+    }
+
+    /**
+     * Check whether a user holds any of the given roles, in any context.
+     *
+     * @param int $userid
+     * @param int[] $roleids
+     * @return bool
+     */
+    private function has_any_role(int $userid, array $roleids): bool {
+        global $DB;
+        [$rolesql, $params] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED);
+        $params['userid'] = $userid;
+        $sql = "userid = :userid AND roleid $rolesql";
+        return $DB->record_exists_select('role_assignments', $sql, $params);
     }
 
     /**

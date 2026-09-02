@@ -90,6 +90,15 @@ class config_form extends \moodleform {
         );
         $mform->setType('config_excludecohortid', PARAM_INT);
         $mform->setDefault('config_excludecohortid', 0);
+        $roleselect = $mform->addElement(
+            'select',
+            'config_excludedroles',
+            get_string('excludedroles', 'tool_inactive_user_cleanup'),
+            $this->get_role_options()
+        );
+        $roleselect->setMultiple(true);
+        $mform->setType('config_excludedroles', PARAM_SEQUENCE);
+        $mform->addElement('static', 'excludedrolesdesc', '', get_string('excludedroles_desc', 'tool_inactive_user_cleanup'));
 
         $this->add_action_buttons();
     }
@@ -126,6 +135,20 @@ class config_form extends \moodleform {
         $cohorts = $DB->get_records('cohort', null, 'name ASC', 'id, name');
         foreach ($cohorts as $cohort) {
             $options[$cohort->id] = format_string($cohort->name);
+        }
+        return $options;
+    }
+
+    /**
+     * Get the list of roles to offer in the "exclude roles" selector.
+     *
+     * @return array id => localised name
+     */
+    private function get_role_options(): array {
+        $roles = role_get_names(\context_system::instance());
+        $options = [];
+        foreach ($roles as $role) {
+            $options[$role->id] = $role->localname;
         }
         return $options;
     }
