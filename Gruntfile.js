@@ -16,11 +16,18 @@
 /**
  * Standalone Grunt configuration for tool_inactive_user_cleanup.
  *
- * This plugin currently has no amd/src or scss sources - the tasks below
- * simply have nothing to do until some are added. It exists so this plugin
+ * This plugin currently has no amd/src or scss sources - the amd task below
+ * simply has nothing to do until some are added. It exists so this plugin
  * can be linted/built on its own, without checking out a full Moodle site.
- * CI (moodle-plugin-ci grunt) does not use this file: it runs Moodle core's
- * own Gruntfile against a full site instead.
+ *
+ * Note: moodle-plugin-ci's own "grunt" CI command DOES pick up this file
+ * once it exists (it runs Grunt with this plugin's directory as the working
+ * directory whenever a plugin-local Gruntfile.js is present, and always does
+ * so for its "stylelint" task regardless). The stylelint/yui/gherkinlint
+ * tasks below are registered as harmless no-ops purely so that CI invocation
+ * degrades gracefully rather than failing with "Task not found" - our real
+ * CI workflow passes --no-plugin-node during install specifically so it
+ * never needs to reach that fallback in the first place.
  *
  * @copyright  DualCube (https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -62,4 +69,11 @@ module.exports = function(grunt) {
 
     grunt.registerTask('amd', ['eslint', 'uglify']);
     grunt.registerTask('default', ['amd']);
+
+    // No-ops: this plugin has no stylesheets, YUI modules, or Behat features
+    // for these tasks to act on. Registered so moodle-plugin-ci's grunt
+    // command never hard-fails with "Task not found" if it ever reaches them.
+    grunt.registerTask('stylelint', []);
+    grunt.registerTask('yui', []);
+    grunt.registerTask('gherkinlint', []);
 };

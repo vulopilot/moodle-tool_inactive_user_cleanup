@@ -172,11 +172,18 @@ jobs:
       # Install Moodle + plugin
       # ---------------------------------------------------------
 
+      # --no-plugin-node: this plugin's package.json/Gruntfile.js are for local
+      # development only (no amd/scss source exists yet). Without this flag,
+      # moodle-plugin-ci's own "npm install" inside the plugin directory pulls
+      # in grunt's transitive dependencies, some of which ship .css/.scss files
+      # in node_modules - with no thirdpartylibs.xml to exclude them, that then
+      # makes moodle-plugin-ci wrongly think this plugin has real stylesheets
+      # and tries to run a "stylelint" Grunt task our Gruntfile doesn't define.
       - name: Install Moodle
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}
-        run: moodle-plugin-ci install --plugin "./$PLUGIN_SLUG" --db-host=127.0.0.1
+        run: moodle-plugin-ci install --plugin "./$PLUGIN_SLUG" --db-host=127.0.0.1 --no-plugin-node
 
       # ---------------------------------------------------------
       # PHP syntax
